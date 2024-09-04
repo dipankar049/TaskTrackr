@@ -83,6 +83,17 @@ class DailyTaskHelper {
     return result.map((json) => DailyTaskModel.fromJson(json)).toList();
   }
 
+  // Future<List<DailyTaskModel>> getActiveTask() async {
+  //   // Get a reference to the database.
+  //   final db = await database;
+
+  //   // Query the table for all The DailyTask. {SELECT * FROM DailyTask ORDER BY Id ASC}
+  //   final result = await db.query(dailyTask, orderBy: '$colId ASC');
+
+  //   // Convert the List<Map<String, dynamic> into a List<Task>.
+  //   return result.map((json) => DailyTaskModel.fromJson(json)).toList();
+  // }
+
   // Serach task by Id
   Future<DailyTaskModel> read(int id) async {
     final db = await database;
@@ -133,6 +144,20 @@ class DailyTaskHelper {
 
     // Update the given task.
     var res = await db.update(dailyTask, {'completed' : isCompleted},
+        // Ensure that the task has a matching id.
+        where: '$colId = ?',
+        // Pass the task's id as a whereArg to prevent SQL injection.
+        whereArgs: [taskId]);
+    return res;
+  }
+
+  Future<int> updateTaskState(int taskId, String isActive) async {
+    // Get a reference to the database.
+    final db = await database; 
+
+
+    // Update the given task.
+    var res = await db.update(dailyTask, {'state' : isActive},
         // Ensure that the task has a matching id.
         where: '$colId = ?',
         // Pass the task's id as a whereArg to prevent SQL injection.

@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:task_master/screens/AppDrawer.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
 import 'package:task_master/screens/HomePage.dart';
-import 'package:task_master/services/DailyTaskHelper.dart';
+// import 'package:task_master/services/DailyTaskHelper.dart';
 // import 'package:intl/intl.dart';
+import '../services/DatabaseHelper.dart';
 
 class AddTask extends StatefulWidget {
   const AddTask({super.key, this.taskId});  
@@ -20,7 +21,7 @@ class _AddTaskState extends State<AddTask> {
   final formKey = GlobalKey<FormState>();
 
   // Create an instance of the database helper
-  DailyTaskHelper taskDatabase = DailyTaskHelper.instance;
+  DatabaseHelper taskDatabase = DatabaseHelper.instance;
 
   TextEditingController titleController = TextEditingController();
   TextEditingController defaultMinutesController = TextEditingController();

@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:task_master/screens/AddTask.dart';
 import 'package:task_master/screens/AppDrawer.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
-import 'package:task_master/services/DailyTaskHelper.dart';
+// import 'package:task_master/services/DailyTaskHelper.dart';
+import '../services/DatabaseHelper.dart';
 
 class HomePage extends StatefulWidget {
 
@@ -12,7 +13,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<HomePage> {
-  DailyTaskHelper taskDatabase = DailyTaskHelper.instance;
+  DatabaseHelper taskDatabase = DatabaseHelper.instance;
   List<DailyTaskModel> tasks = [];
 
   TextEditingController searchController = TextEditingController();
@@ -43,7 +44,8 @@ class _MyHomePageState extends State<HomePage> {
           filteredTasks = tasks.where((task) {
             return task.title!
                     .toLowerCase()
-                    .contains(searchController.text.toLowerCase());
+                    .contains(searchController.text.toLowerCase()) ||
+                    task.state == 'active';
           }).toList();
         } else {
           // Clear the filteredTasks list
@@ -98,12 +100,13 @@ class _MyHomePageState extends State<HomePage> {
   }
   
   Widget buildTaskCard(DailyTaskModel task) {
-    return Card(
+    return task.state == 'active' ? Card(
       child: GestureDetector(
         onTap: () => {
           taskDetailsView(id: task.id),
         },
         child: ListTile(
+          
           leading: const Icon(
             Icons.task,
             color: Color.fromARGB(255, 253, 237, 89),
@@ -120,7 +123,8 @@ class _MyHomePageState extends State<HomePage> {
                   updateTaskStatus(task.id!, (task.completed == 1) ? 0 : 1);
                 },
                 icon: Icon(
-                  (task.completed == 1) ? Icons.done : Icons.pending,
+                  (task.completed == 1) ? Icons.task_alt : Icons.pending,
+                  size: 25,
                   color: (task.completed == 1) ? Color.fromARGB(255, 21, 255, 0) : Color.fromARGB(255, 255, 81, 0) ,
                 ),
               ),
@@ -128,7 +132,7 @@ class _MyHomePageState extends State<HomePage> {
           ),
         ),
       ),
-    );
+    ) : SizedBox.shrink();
   }
 
   @override
@@ -153,7 +157,9 @@ class _MyHomePageState extends State<HomePage> {
                     controller: searchController,
                     decoration: const InputDecoration(
                       hintText: 'Search Tasks...',
-                      prefixIcon: Icon(Icons.search),
+                      prefixIcon: Icon(Icons.search,
+                        size: 30,
+                      ),
                     ),
                   ),
                 ),
