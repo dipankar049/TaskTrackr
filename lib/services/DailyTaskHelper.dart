@@ -161,7 +161,7 @@ class DailyTaskHelper {
         // Ensure that the task has a matching id.
         where: '$colId = ?',
         // Pass the task's id as a whereArg to prevent SQL injection.
-        whereArgs: [taskId]);
+        whereArgs: [taskId]); 
     return res;
   }
 

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:task_master/screens/AddTask.dart';
-import 'package:task_master/screens/AppDrawer.dart';
+// import 'package:task_master/screens/AppDrawer.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
 // import 'package:task_master/services/DailyTaskHelper.dart';
 import '../services/DatabaseHelper.dart';
 
 class UpdateTask extends StatefulWidget {
-  const UpdateTask({super.key, this.taskId});  
-  final int? taskId;
+  // const UpdateTask({super.key, this.taskId});  
+  // final int? taskId;
 
   @override
   State<UpdateTask> createState() => _UpdateTaskState();
@@ -18,6 +18,7 @@ class UpdateTask extends StatefulWidget {
 class _UpdateTaskState extends State<UpdateTask> {
 
   DatabaseHelper taskDatabase = DatabaseHelper.instance;
+  // DailyTaskHelper taskDatabase = DailyTaskHelper.instance;
   List<DailyTaskModel> tasks = [];
 
   TextEditingController searchController = TextEditingController();
@@ -35,7 +36,8 @@ class _UpdateTaskState extends State<UpdateTask> {
   @override
   dispose() {
     // Close the database when no longer needed
-    taskDatabase.close();
+    // taskDatabase.close();
+    searchController.dispose();
     super.dispose();
   }
 
@@ -48,7 +50,8 @@ class _UpdateTaskState extends State<UpdateTask> {
           filteredTasks = tasks.where((task) {
             return task.title!
                     .toLowerCase()
-                    .contains(searchController.text.toLowerCase());
+                    .contains(searchController.text.toLowerCase()) &&
+                    (task.state != 'remove');
           }).toList();
         } else {
           // Clear the filteredTasks list
@@ -59,9 +62,10 @@ class _UpdateTaskState extends State<UpdateTask> {
   }
 
   
-  Future<void> updateTaskStatus(int taskId, String isActive) async {
+  Future<void> updateTaskState(int taskId, String isActive) async {
     try {
       await taskDatabase.updateTaskState(taskId, isActive);
+      // refreshTasks();
 
       // Show success feedback
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,8 +74,8 @@ class _UpdateTaskState extends State<UpdateTask> {
           backgroundColor: Color.fromARGB(255, 53, 162, 208),
         ),
       );
-
       refreshTasks();
+      
     } catch (error) {
       // Show error feedback
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +126,7 @@ class _UpdateTaskState extends State<UpdateTask> {
             children: [
               IconButton(
                 onPressed: () {
-                  updateTaskStatus(task.id!, (task.state == 'active') ? 'deactive' : 'active');
+                  updateTaskState(task.id!, (task.state == 'active') ? 'deactive' : 'active');
                 },
                 icon: Icon(
                   (task.state == 'active') ? Icons.toggle_on : Icons.toggle_off,
@@ -132,7 +136,7 @@ class _UpdateTaskState extends State<UpdateTask> {
               ),
               IconButton(
                 onPressed: () {
-                  updateTaskStatus(task.id!, 'remove');
+                  updateTaskState(task.id!, 'remove');
                 },
                 icon: const Icon(
                   Icons.delete,
@@ -157,7 +161,7 @@ class _UpdateTaskState extends State<UpdateTask> {
           ),
         ),
       ),
-      drawer: Appdrawer(),
+      // drawer: Appdrawer(),
       body: Column(
         children: [
           Padding(
@@ -231,7 +235,10 @@ class _UpdateTaskState extends State<UpdateTask> {
         onPressed: () {
             Navigator.push(context,
             MaterialPageRoute(builder: (context) => AddTask())
-          );
+          ).then((value) {
+          // This will run after returning from HomePage (after pop)
+            refreshTasks(); // Call the refresh task function
+          });
         },
         tooltip: 'Create task',
         child: const Icon(Icons.add),

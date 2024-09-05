@@ -1,3 +1,4 @@
+// ignore: file_names
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../models/calenderTaskModel.dart';
@@ -21,7 +22,7 @@ class _CalendarScreenState extends State<Calendar> {
         future: _databaseHelper.getMeetings(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -30,7 +31,7 @@ class _CalendarScreenState extends State<Calendar> {
               onTap: calendarTapped,
               dataSource: MeetingDataSource([]),
               initialSelectedDate: DateTime.now(),
-              monthViewSettings: MonthViewSettings(
+              monthViewSettings: const MonthViewSettings(
                 showAgenda: true,
               ),
             );
@@ -40,7 +41,7 @@ class _CalendarScreenState extends State<Calendar> {
               onTap: calendarTapped,
               dataSource: MeetingDataSource(snapshot.data!),
               initialSelectedDate: DateTime.now(),
-              monthViewSettings: MonthViewSettings(
+              monthViewSettings: const MonthViewSettings(
                 showAgenda: true,
               ),
             );
@@ -57,45 +58,45 @@ class _CalendarScreenState extends State<Calendar> {
   }
 
   void _showAddEventDialog(DateTime selectedDate) {
-    final _eventNameController = TextEditingController();
-    DateTime _fromDate = selectedDate;
-    DateTime _toDate = selectedDate.add(Duration(hours: 1));
+    final eventNameController = TextEditingController();
+    DateTime fromDate = selectedDate;
+    DateTime toDate = selectedDate.add(const Duration(hours: 1));
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Add Event'),
+          title: const Text('Add Event'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: _eventNameController,
-                decoration: InputDecoration(labelText: 'Event Name'),
+                controller: eventNameController,
+                decoration: const InputDecoration(labelText: 'Event Name'),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               ListTile(
-                title: Text('From: ${_fromDate.toString()}'),
+                title: Text('From: ${fromDate.toString()}'),
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: _fromDate,
+                    initialDate: fromDate,
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
                   );
-                  if (picked != null) setState(() => _fromDate = picked);
+                  if (picked != null) setState(() => fromDate = picked);
                 },
               ),
               ListTile(
-                title: Text('To: ${_toDate.toString()}'),
+                title: Text('To: ${toDate.toString()}'),
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: _toDate,
+                    initialDate: toDate,
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
                   );
-                  if (picked != null) setState(() => _toDate = picked);
+                  if (picked != null) setState(() => toDate = picked);
                 },
               ),
             ],
@@ -103,15 +104,15 @@ class _CalendarScreenState extends State<Calendar> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                if (_eventNameController.text.isNotEmpty) {
+                if (eventNameController.text.isNotEmpty) {
                   final newMeeting = Meeting(
-                    eventName: _eventNameController.text,
-                    from: _fromDate,
-                    to: _toDate,
+                    eventName: eventNameController.text,
+                    from: fromDate,
+                    to: toDate,
                     background: Colors.blue,
                     isAllDay: false,
                   );
@@ -120,7 +121,7 @@ class _CalendarScreenState extends State<Calendar> {
                 }
                 Navigator.pop(context);
               },
-              child: Text('Add'),
+              child: const Text('Add'),
             ),
           ],
         );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:task_master/screens/AppDrawer.dart';
+// import 'package:task_master/screens/AppDrawer.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
-import 'package:task_master/screens/HomePage.dart';
+// import 'package:task_master/screens/HomePage.dart';
 // import 'package:task_master/services/DailyTaskHelper.dart';
 // import 'package:intl/intl.dart';
 import '../services/DatabaseHelper.dart';
@@ -21,6 +21,7 @@ class _AddTaskState extends State<AddTask> {
   final formKey = GlobalKey<FormState>();
 
   // Create an instance of the database helper
+  // DailyTaskHelper taskDatabase = DailyTaskHelper.instance;
   DatabaseHelper taskDatabase = DatabaseHelper.instance;
 
   TextEditingController titleController = TextEditingController();
@@ -43,9 +44,7 @@ class _AddTaskState extends State<AddTask> {
         content: Text("Task successfully added."),
         backgroundColor: Color.fromARGB(255, 4, 160, 74),
       ));
-      Navigator.push(context, 
-        MaterialPageRoute(builder: (context) => HomePage())
-      );
+      Navigator.pop(context);
     }).catchError((error) {
       if (kDebugMode) {
         print(error);
@@ -127,7 +126,7 @@ class _AddTaskState extends State<AddTask> {
               : 'Edit Task', // Set title to 'Add a task' if isNewTask is true, otherwise set it to 'Edit task'
         ),
       ),
-      drawer: Appdrawer(),
+      // drawer: Appdrawer(),
       body: Form(
         key: formKey,
         child: Container(

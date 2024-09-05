@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:task_master/screens/AddTask.dart';
-import 'package:task_master/screens/AppDrawer.dart';
+// import 'package:task_master/screens/AppDrawer.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
 // import 'package:task_master/services/DailyTaskHelper.dart';
 import '../services/DatabaseHelper.dart';
+import 'package:task_master/screens/Calender.dart';
+import 'package:task_master/screens/UpdateTask.dart';
 
 class HomePage extends StatefulWidget {
 
@@ -44,8 +46,8 @@ class _MyHomePageState extends State<HomePage> {
           filteredTasks = tasks.where((task) {
             return task.title!
                     .toLowerCase()
-                    .contains(searchController.text.toLowerCase()) ||
-                    task.state == 'active';
+                    .contains(searchController.text.toLowerCase()) &&
+                    (task.state == 'active');
           }).toList();
         } else {
           // Clear the filteredTasks list
@@ -145,7 +147,62 @@ class _MyHomePageState extends State<HomePage> {
           ),
         ),
       ),
-      drawer: Appdrawer(),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text('Task Master'),
+            ),
+            const ListTile(
+              title: Text('Home'),
+              // onTap: () {
+              //   Navigator.push(context, 
+              //     MaterialPageRoute(builder: (context) => HomePage())
+              //   );
+              // },
+            ),
+            ListTile(
+              title: const Text('Calender'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(context, 
+                  MaterialPageRoute(builder: (context) => Calendar())
+                ).then((value) {
+                // This will run after returning from HomePage (after pop)
+                  refreshTasks(); // Call the refresh task function
+                });
+              },
+            ),
+            ListTile(
+              title: const Text('Add New Task'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => AddTask())
+                ).then((value) {
+                // This will run after returning from HomePage (after pop)
+                  refreshTasks(); // Call the refresh task function
+                });
+              },
+            ),
+            ListTile(
+              title: const Text('Update Task'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => UpdateTask())
+                ).then((value) {
+                // This will run after returning from HomePage (after pop)
+                  refreshTasks(); // Call the refresh task function
+                });
+              },
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Padding(
@@ -219,7 +276,10 @@ class _MyHomePageState extends State<HomePage> {
         onPressed: () {
             Navigator.push(context,
             MaterialPageRoute(builder: (context) => AddTask())
-          );
+          ).then((value) {
+          // This will run after returning from HomePage (after pop)
+            refreshTasks(); // Call the refresh task function
+          });
         },
         tooltip: 'Create task',
         child: const Icon(Icons.add),

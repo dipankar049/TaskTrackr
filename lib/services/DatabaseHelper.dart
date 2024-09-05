@@ -147,9 +147,13 @@ class DatabaseHelper {
   Future<int> updateTaskState(int taskId, String isActive) async {
     final db = await database; 
 
+
+    // Update the given task.
     var res = await db.update('DailyTask', {'state' : isActive},
-      where: 'id = ?',
-      whereArgs: [taskId]);
+        // Ensure that the task has a matching id.
+        where: 'id = ?',
+        // Pass the task's id as a whereArg to prevent SQL injection.
+        whereArgs: [taskId]); 
     return res;
   }
 
