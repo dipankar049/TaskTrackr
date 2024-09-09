@@ -52,6 +52,15 @@ class DatabaseHelper {
             completed INTEGER 
           )
         ''');
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS task_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            taskId INTEGER,
+            date TEXT,
+            duration INTEGER,
+            status INTEGER
+          )
+        ''');
       }
     );
   }
@@ -167,5 +176,36 @@ class DatabaseHelper {
   Future<void> close() async {
     Database db = await database;
     await db.close();
+  }
+
+  Future<int> storeTaskHistory(Map<String, dynamic> taskHistory) async {
+    Database db = await instance.database;
+    
+    // Insert task history into the table (e.g., 'task_history')
+    return await db.insert(
+      'task_history',  // Name of your task history table
+      taskHistory,     // Data to insert (Map<String, dynamic>)
+      conflictAlgorithm: ConflictAlgorithm.replace,  // Replace in case of conflict
+    );
+  }
+
+  // Method to retrieve all task history records
+  Future<List<Map<String, dynamic>>> getTaskHistory() async {
+    Database db = await instance.database;
+
+    // Query the task_history table
+    return await db.query('task_history');
+  }
+
+  // Method to retrieve task history by taskId
+  Future<List<Map<String, dynamic>>> getTaskHistoryByTaskId(int taskId) async {
+    Database db = await instance.database;
+
+    // Query the task_history table for a specific taskId
+    return await db.query(
+      'task_history',
+      where: 'taskId = ?',
+      whereArgs: [taskId],
+    );
   }
 }

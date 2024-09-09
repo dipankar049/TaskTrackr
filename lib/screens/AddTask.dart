@@ -123,7 +123,12 @@ class _AddTaskState extends State<AddTask> {
         title:  Text(
           isNewTask
               ? 'Add New Task'
-              : 'Edit Task', // Set title to 'Add a task' if isNewTask is true, otherwise set it to 'Edit task'
+              : 'Edit Task',
+          style: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.w500,
+            color: Colors.cyan[600],
+          ), // Set title to 'Add a task' if isNewTask is true, otherwise set it to 'Edit task'
         ),
       ),
       // drawer: Appdrawer(),
@@ -191,7 +196,7 @@ class _AddTaskState extends State<AddTask> {
                 child: ElevatedButton(
                   onPressed: createTask,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(94, 114, 228, 1.0),
+                    backgroundColor: Colors.cyan[400],
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),

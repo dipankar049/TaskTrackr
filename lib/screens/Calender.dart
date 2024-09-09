@@ -16,42 +16,52 @@ class _CalendarScreenState extends State<Calendar> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calendar'),
+        title: Text('Calendar',
+          style: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.w500,
+            color: Colors.cyan[700],
+          ),
+        ),
       ),
-      body: FutureBuilder<List<Meeting>>(
-        future: _databaseHelper.getMeetings(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return SfCalendar(
-              view: CalendarView.month,
-              onTap: calendarTapped,
-              dataSource: MeetingDataSource([]),
-              initialSelectedDate: DateTime.now(),
-              monthViewSettings: const MonthViewSettings(
-                showAgenda: true,
-              ),
-            );
-          } else {
-            return SfCalendar(
-              view: CalendarView.month,
-              onTap: calendarTapped,
-              dataSource: MeetingDataSource(snapshot.data!),
-              initialSelectedDate: DateTime.now(),
-              monthViewSettings: const MonthViewSettings(
-                showAgenda: true,
-              ),
-            );
-          }
-        },
+      body: Container(
+        padding: EdgeInsets.all(12),
+        child: 
+        FutureBuilder<List<Meeting>>(
+          future: _databaseHelper.getMeetings(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return SfCalendar(
+                view: CalendarView.month,
+                onLongPress: calendarTapped,
+                dataSource: MeetingDataSource([]),
+                initialSelectedDate: DateTime.now(),
+                monthViewSettings: const MonthViewSettings(
+                  showAgenda: true,
+                ),
+              );
+            } else {
+              return SfCalendar(
+                view: CalendarView.month,
+                onLongPress: calendarTapped,
+                dataSource: MeetingDataSource(snapshot.data!),
+                initialSelectedDate: DateTime.now(),
+                monthViewSettings: const MonthViewSettings(
+                  showAgenda: true,
+                ),
+              );
+            }
+          },
+        ),
       ),
     );
   }
 
-  void calendarTapped(CalendarTapDetails details) {
+  void calendarTapped(CalendarLongPressDetails details) {
     if (details.targetElement == CalendarElement.calendarCell) {
       _showAddEventDialog(details.date!);
     }

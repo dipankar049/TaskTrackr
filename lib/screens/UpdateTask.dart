@@ -66,22 +66,35 @@ class _UpdateTaskState extends State<UpdateTask> {
     try {
       await taskDatabase.updateTaskState(taskId, isActive);
       // refreshTasks();
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      // Dismiss the current SnackBar (if any) before showing a new one
+      scaffoldMessenger.hideCurrentSnackBar();
 
       // Show success feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isActive == 'active' ? "Task activated" : (isActive == 'deactive' ? "Deactivated" : 'Removed permanently')),
-          backgroundColor: Color.fromARGB(255, 53, 162, 208),
+          content: Text(isActive == 'active' ? "Task activated" : (isActive == 'deactive' ? "Deactivated" : 'Removed permanently'),
+            style: const TextStyle(
+              color: Colors.black,
+            ),
+          ),
+          backgroundColor: Colors.cyan[400],
+          duration: const Duration(seconds: 2),
         ),
       );
       refreshTasks();
       
     } catch (error) {
       // Show error feedback
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      // Dismiss the current SnackBar (if any) before showing a new one
+      scaffoldMessenger.hideCurrentSnackBar();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Task failed to update"),
           backgroundColor: Color.fromARGB(255, 235, 108, 108),
+          duration: Duration(seconds: 2),
         ),
       );
       if (kDebugMode) {
@@ -113,13 +126,13 @@ class _UpdateTaskState extends State<UpdateTask> {
           taskDetailsView(id: task.id),
         },
         child: ListTile(
-          leading: const Icon(
+          leading: Icon(
             Icons.task,
-            color: Color.fromARGB(255, 253, 237, 89),
+            color: Colors.cyan[500],
           ),
           title: Text(task.title ?? "",
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                   ),
                 ),
           trailing: Wrap(
@@ -155,9 +168,11 @@ class _UpdateTaskState extends State<UpdateTask> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Update Task',
+        title: Text('Update Task',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 25,
+            fontWeight: FontWeight.w500,
+            color: Colors.cyan[700],
           ),
         ),
       ),
@@ -171,9 +186,10 @@ class _UpdateTaskState extends State<UpdateTask> {
                 Expanded(
                   child: TextField(
                     controller: searchController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Search Tasks...',
                       prefixIcon: Icon(Icons.search,
+                        color: Colors.cyan[600],
                         size: 30,
                       ),
                     ),
