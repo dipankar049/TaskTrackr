@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:task_master/screens/AddTask.dart';
-// import 'package:task_master/screens/AppDrawer.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
-import 'package:task_master/screens/Overview.dart';
-// import 'package:task_master/services/DailyTaskHelper.dart';
+import 'package:task_master/screens/weekly_summery.dart';
 import '../services/DatabaseHelper.dart';
 import 'package:task_master/screens/Calender.dart';
 import 'package:task_master/screens/UpdateTask.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';  // For date formatting
+import '../models/calenderTaskModel.dart';
 
 class HomePage extends StatefulWidget {
 
@@ -20,19 +19,13 @@ class HomePage extends StatefulWidget {
 class _MyHomePageState extends State<HomePage> {
   DatabaseHelper taskDatabase = DatabaseHelper.instance;
   List<DailyTaskModel> tasks = [];
+  List<Meeting> meetings = [];
+  bool isLoading = true;
 
   TextEditingController searchController = TextEditingController();
   bool isSearchTextNotEmpty = false;
   List<DailyTaskModel> filteredTasks = [];
   bool taskStatus = false;
-
-  // @override
-  // void initState() {
-  //   refreshTasks();
-  //   _checkAndStoreTasks();
-  //   search();
-  //   super.initState();
-  // }
 
   @override
   void initState() {
@@ -41,17 +34,38 @@ class _MyHomePageState extends State<HomePage> {
   }
 
   Future<void> refreshTasks() async {
-    final value = await taskDatabase.getAll();
     setState(() {
-      tasks = value;
+      isLoading = true;  // Set loading state to true at the beginning
     });
+
+    try {
+      final calTask = await taskDatabase.getMeetings();
+      final value = await taskDatabase.getAll();
+
+      setState(() {
+        meetings = calTask;
+        tasks = value;
+        isLoading = false;  // Set loading state to false after both tasks are done
+      });
+      // await filterMeetings();
+    } catch (e) {
+      setState(() {
+        isLoading = false;  // Set loading to false even if an error occurs
+      });
+      print("Error: $e");  // Handle error (optional)
+    }
   }
 
+  // Future<void> filterMeetings() async {
+  //   if()
+  //   setState(() {
+  //     isLoading = true;  // Set loading state to true at the beginning
+  //   });
+  // }
 
   Future<void> _initializeTasks() async {
     await refreshTasks(); // Ensure refreshTasks completes first
     await search();
-    await _checkAndStoreTasks(); // Runs only after refreshTasks is done
   }
 
   @override
@@ -69,9 +83,9 @@ class _MyHomePageState extends State<HomePage> {
           // Perform filtering and update the filteredTasks list
           filteredTasks = tasks.where((task) {
             return task.title!
-                    .toLowerCase()
-                    .contains(searchController.text.toLowerCase()) &&
-                    (task.state == 'active');
+              .toLowerCase()
+              .contains(searchController.text.toLowerCase()) &&
+              (task.state == 'active');
           }).toList();
         } else {
           // Clear the filteredTasks list
@@ -87,43 +101,41 @@ class _MyHomePageState extends State<HomePage> {
     
     DateTime now = DateTime.now();
     DateTime today = DateTime(now.year, now.month, now.day);
-    DateTime threeAM = DateTime(today.year, today.month, today.day, 3, 0, 0);
-
-    // If current time is before 3 AM, consider it as the previous day
-    if (now.isBefore(threeAM)) {
-      today = today.subtract(Duration(days: 1));
-    }
 
     if (lastStoredDate != null) {
       DateTime lastStored = DateFormat('yyyy-MM-dd').parse(lastStoredDate);
 
       // Store task data if last stored date is not today and the current time is past 3 AM
-      if (!isSameDay(lastStored, today) && now.isAfter(threeAM)) {
-        await _storeTaskDataForYesterday(today);
-        await prefs.setString('lastStoredDate', DateFormat('yyyy-MM-dd').format(today));
+      if (isSameDay(lastStored, today)) {
+        await updateTaskHistory();
+        // await prefs.setString('lastStoredDate', DateFormat('yyyy-MM-dd').format(today));
+      } else {
+        await insertTaskHistory(today);
       }
     } else {
       // No previous date stored, store task data if the current time is past 3 AM and save today's date
-      if (now.isAfter(threeAM)) {
-        await _storeTaskDataForYesterday(today);
-        await prefs.setString('lastStoredDate', DateFormat('yyyy-MM-dd').format(today));
-      }
+      await insertTaskHistory(today);
+      await prefs.setString('lastStoredDate', DateFormat('yyyy-MM-dd').format(today));
     }
   }
+
   // Helper function to check if two dates are the same day
   bool isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
-          date1.month == date2.month &&
-          date1.day == date2.day;
+      date1.month == date2.month &&
+      date1.day == date2.day;
   }
-  Future<void> _storeTaskDataForYesterday(DateTime date) async {
+
+
+  Future<void> insertTaskHistory(DateTime date) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String dateString = DateFormat('yyyy-MM-dd').format(date);
     
     for (var task in tasks) {
-      if(task.state == 'active' && task.completed == 1) {
+      if(task.state == 'active') {
         await taskDatabase.storeTaskHistory({
           'taskId': task.id,
+          'taskTitle': task.title,
           'date': dateString,
           'duration': task.defaultMinutes,
           'status': task.completed,
@@ -137,7 +149,51 @@ class _MyHomePageState extends State<HomePage> {
 
     // Feedback to show that the task has been stored
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("${tasks}Tasks stored for yesterday")),
+      SnackBar(content: Text("${tasks}Tasks stored in History")),
+    );
+  }
+
+  Future<void> replaceTaskHistory() async {
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String dateString = DateFormat('yyyy-MM-dd').format(today);
+
+    await taskDatabase.deleteTaskHistoryByDate(dateString);
+
+    for (var task in tasks) {
+      if(task.state == 'active') {
+        await taskDatabase.storeTaskHistory({
+          'taskId': task.id,
+          'taskTitle': task.title,
+          'date': dateString,
+          'duration': task.defaultMinutes,
+          'status': task.completed,
+        });
+      } 
+    }
+
+    // Update the last stored date to today
+    String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    await prefs.setString('lastStoredDate', todayDate);
+
+    // Feedback to show that the task has been stored
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("${dateString}Tasks Replaced in History")),
+    );
+  }
+
+  Future<void> updateTaskHistory() async {
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+    String dateString = DateFormat('yyyy-MM-dd').format(today);
+    for (var task in tasks) {
+      if(task.state == 'active') {
+        await taskDatabase.updateTaskHistory( task.title!, task.id!, dateString, task.defaultMinutes!, task.completed!);
+      } 
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("${dateString}Tasks updated in History")),
     );
   }
   
@@ -160,7 +216,8 @@ class _MyHomePageState extends State<HomePage> {
         ),
       );
 
-      refreshTasks();
+      await refreshTasks();
+      _checkAndStoreTasks();
     } catch (error) {
       // Show error feedback
       final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -186,19 +243,27 @@ class _MyHomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (context) => AddTask(taskId: id))
     );
-    refreshTasks();
+    await refreshTasks();
+    replaceTaskHistory();
   }
 
-  
+  String mintoHour(min) {
+    if(min > 60) {
+      int hour = min ~/ 60;
+      min = min - (hour * 60);
+      return min == 0 ? (hour > 1 ? '$hour hours' : '$hour hour')
+      : hour > 1 ? '$hour hrs $min minutes' : '$hour hr $min minutes';
+    }
+    return '$min minutes';
+  }
+
   Widget buildTaskCard(DailyTaskModel task) {
     return task.state == 'active' ? Card(
-      // color: const Color.fromARGB(255, 230, 245, 247),
       child: GestureDetector(
         onTap: () => {
           taskDetailsView(id: task.id),
         },
         child: ListTile(
-          
           leading: Icon(
             Icons.task,
             color: Colors.cyan[500],
@@ -206,11 +271,10 @@ class _MyHomePageState extends State<HomePage> {
           title: Text(task.title ?? "",
                   style: const TextStyle(
                     fontSize: 20,
-                    // color: Color.fromRGBO(38, 198, 218, 1),
                   ),
                 ),
           subtitle: Text(
-                '${task.defaultMinutes ?? ""} min',
+                task.defaultMinutes != null ? mintoHour(task.defaultMinutes) : "",
                 style: const TextStyle(
                   // fontSize
                   color: Colors.blue,
@@ -226,7 +290,7 @@ class _MyHomePageState extends State<HomePage> {
                 icon: Icon(
                   (task.completed == 1) ? Icons.task_alt : Icons.pending,
                   size: 25,
-                  color: (task.completed == 1) ? Color.fromARGB(255, 21, 255, 0) : Color.fromARGB(255, 70, 170, 252) ,
+                  color: (task.completed == 1) ? const Color.fromARGB(255, 21, 255, 0) : const Color.fromARGB(255, 70, 170, 252) ,
                 ),
               ),
             ],
@@ -268,30 +332,31 @@ class _MyHomePageState extends State<HomePage> {
             SizedBox(
               height: 105,
               child: DrawerHeader(
-              decoration: const BoxDecoration(
-                // color: Colors.blue,
-                
-              ),
-              child: Row(
-                children: [
-                  Image.asset(
-                    'assets/taskIcon.png', // Your image path here
-                    width: 30, // Customize the width and height as needed
-                    height: 30,
-                    fit: BoxFit.cover, // Adjust image fit to your preference
-                  ),
-                  const SizedBox(width: 6,),
-                  Text('Task Tracker',
-                    style: TextStyle(
-                      color: Colors.cyan[700],
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
+                decoration: const BoxDecoration(
+                  // color: Colors.blue,
+                  
+                ),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'assets/taskIcon.png', // Your image path here
+                      width: 30, // Customize the width and height as needed
+                      height: 30,
+                      fit: BoxFit.cover, // Adjust image fit to your preference
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6,),
+                    Text('Task Tracker',
+                      style: TextStyle(
+                        color: Colors.cyan[700],
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            ),
+
             ListTile(
               leading: Icon(Icons.home,
                 color: Colors.cyan[500],
@@ -309,6 +374,7 @@ class _MyHomePageState extends State<HomePage> {
                 Navigator.of(context).pop();
               },
             ),
+
             ListTile(
               leading: Icon(Icons.calendar_month,
                 color: Colors.cyan[500],
@@ -331,28 +397,7 @@ class _MyHomePageState extends State<HomePage> {
                 });
               },
             ),
-            // ListTile(
-            //   leading: const Icon(Icons.add_box_outlined,
-            //     color: Color.fromRGBO(0, 170, 185, 1),
-            //     size: 26,
-            //   ),
-            //   title: const Text('Add New Task',
-            //   style: TextStyle(
-            //       color: Color.fromRGBO(0, 170, 185, 1),
-            //       fontSize: 18,
-            //       fontWeight: FontWeight.w500,
-            //     ),
-            //   ),
-            //   onTap: () {
-            //     Navigator.of(context).pop();
-            //     Navigator.push(context,
-            //       MaterialPageRoute(builder: (context) => AddTask())
-            //     ).then((value) {
-            //     // This will run after returning from HomePage (after pop)
-            //       refreshTasks(); // Call the refresh task function
-            //     });
-            //   },
-            // ),
+
             ListTile(
               leading: Icon(Icons.edit_note,
                 color: Colors.cyan[500],
@@ -372,15 +417,17 @@ class _MyHomePageState extends State<HomePage> {
                 ).then((value) {
                 // This will run after returning from HomePage (after pop)
                   refreshTasks(); // Call the refresh task function
+                  replaceTaskHistory();
                 });
               },
             ),
+
             ListTile(
               leading: Icon(Icons.pie_chart,
                 color: Colors.cyan[500],
                 size: 26,
               ),
-              title: Text('Overview',
+              title: Text('Weekly Summery',
               style: TextStyle(
                   color: Colors.cyan[500],
                   fontSize: 18,
@@ -390,13 +437,37 @@ class _MyHomePageState extends State<HomePage> {
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => Overview())
+                  MaterialPageRoute(builder: (context) => WeeklySummery())
                 ).then((value) {
                 // This will run after returning from HomePage (after pop)
                   refreshTasks(); // Call the refresh task function
                 });
               },
             ),
+
+            ListTile(
+              leading: Icon(Icons.pie_chart,
+                color: Colors.cyan[500],
+                size: 26,
+              ),
+              title: Text('Monthly Overview',
+              style: TextStyle(
+                  color: Colors.cyan[500],
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => WeeklySummery())
+                ).then((value) {
+                // This will run after returning from HomePage (after pop)
+                  refreshTasks(); // Call the refresh task function
+                });
+              },
+            ),
+
             ListTile(
               leading: Icon(Icons.restart_alt,
                 color: Colors.cyan[500],
@@ -410,19 +481,18 @@ class _MyHomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-                // Navigator.of(context).pop();
-                // Navigator.push(context,
-                //   MaterialPageRoute(builder: (context) => Overview())
-                // ).then((value) {
-                // // This will run after returning from HomePage (after pop)
-                //   refreshTasks(); // Call the refresh task function
-                // });
               },
             ),
           ],
         ),
       ),
-      body: Column(
+      body: isLoading ? const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.tealAccent),  // Custom color
+          strokeWidth: 4.0,  // Thicker stroke
+        ),
+      )
+      : Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -459,6 +529,9 @@ class _MyHomePageState extends State<HomePage> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  // Container(
+                  //   child: ,
+                  // ),
                   Container(
                     child: tasks.isEmpty
                       ? const Padding(
@@ -498,19 +571,13 @@ class _MyHomePageState extends State<HomePage> {
             MaterialPageRoute(builder: (context) => AddTask())
           ).then((value) {
           // This will run after returning from HomePage (after pop)
-            refreshTasks(); // Call the refresh task function
+            refreshTasks();
+            replaceTaskHistory(); // Call the refresh task function
           });
         },
         tooltip: 'Create task',
         child: const Icon(Icons.add),
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //       _checkAndStoreTasks();
-      //   },
-      //   tooltip: 'Upload',
-      //   child: const Icon(Icons.upload),
-      // ),
     );
   }
 }

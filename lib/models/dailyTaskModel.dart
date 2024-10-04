@@ -7,9 +7,19 @@ class DailyTaskModel {
   int? spentHours;
   String? state;
   int? completed;
+  String? createDate;
 
   // Constructor with optional 'id' parameter
-  DailyTaskModel(this.title, this.defaultMinutes, this.state, this.completed,{ this.spentMinutes, this.spentHours, this.id});
+  DailyTaskModel(
+    this.title, 
+    this.defaultMinutes, 
+    this.state, 
+    this.completed, 
+    this.createDate, 
+    { this.spentMinutes, 
+      this.spentHours, 
+      this.id
+    });
 
   // Convert a Note into a Map. The keys must correspond to the names of the
   // columns in the database.
@@ -21,6 +31,7 @@ class DailyTaskModel {
     spentHours = map['spentHours'];
     state = map['state'];
     completed = map['completed'];
+    createDate = map['createDate'];
   }
 
 // Method to convert a 'DailyTaskModel' to a map
@@ -32,6 +43,7 @@ class DailyTaskModel {
       'spentHours': spentHours,
       'state': state,
       'completed': completed,
+      'createDate': createDate,
     };
   }
 }

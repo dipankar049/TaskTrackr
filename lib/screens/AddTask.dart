@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
 // import 'package:task_master/screens/HomePage.dart';
 // import 'package:task_master/services/DailyTaskHelper.dart';
-// import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 import '../services/DatabaseHelper.dart';
 
 class AddTask extends StatefulWidget {
@@ -61,11 +61,15 @@ class _AddTaskState extends State<AddTask> {
       isLoading = true;
     });
 
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+    String dateString = DateFormat('yyyy-MM-dd').format(today);
+
     if (formKey.currentState != null && formKey.currentState!.validate()) {
       formKey.currentState?.save();
 
       DailyTaskModel model =
-        DailyTaskModel(titleController.text, int.tryParse(defaultMinutesController.text), 'active', 0);
+        DailyTaskModel(titleController.text, int.tryParse(defaultMinutesController.text), 'active', 0, dateString);
 
       if (isNewTask) {
         insert(model);

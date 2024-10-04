@@ -49,9 +49,9 @@ class _UpdateTaskState extends State<UpdateTask> {
           // Perform filtering and update the filteredTasks list
           filteredTasks = tasks.where((task) {
             return task.title!
-                    .toLowerCase()
-                    .contains(searchController.text.toLowerCase()) &&
-                    (task.state != 'remove');
+              .toLowerCase()
+              .contains(searchController.text.toLowerCase()) &&
+              (task.state != 'remove');
           }).toList();
         } else {
           // Clear the filteredTasks list

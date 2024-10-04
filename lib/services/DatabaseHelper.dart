@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/calenderTaskModel.dart';
 import 'package:task_master/models/dailyTaskModel.dart';
+import 'package:task_master/models/task_history_model.dart';
 
 class DatabaseHelper {
 
@@ -49,13 +50,15 @@ class DatabaseHelper {
             spentMinutes INTEGER,
             spentHours INTEGER,
             state TEXT,
-            completed INTEGER 
+            completed INTEGER,
+            createDate TEXT 
           )
         ''');
         await db.execute('''
           CREATE TABLE IF NOT EXISTS task_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             taskId INTEGER,
+            taskTitle TEXT,
             date TEXT,
             duration INTEGER,
             status INTEGER
@@ -139,8 +142,8 @@ class DatabaseHelper {
     final db = await database;
 
     var res = await db.update('DailyTask', task.toJson(),
-        where: 'id = ?',
-        whereArgs: [task.id]);
+      where: 'id = ?',
+      whereArgs: [task.id]);
     return res;
   }
 
@@ -206,6 +209,49 @@ class DatabaseHelper {
       'task_history',
       where: 'taskId = ?',
       whereArgs: [taskId],
+    );
+  }
+
+  Future<List<TaskHistory?>> getTaskHistoryByDate(String date) async {
+    Database db = await instance.database;
+
+    // Query the task_history table for a specific taskId
+    List<Map<String, dynamic>> result = await db.query(
+      'task_history',
+      where: 'date = ?',
+      whereArgs: [date],
+    );
+
+    // Convert each map into a TaskHistory object
+    List<TaskHistory> taskHistoryList = result.map((map) => TaskHistory.fromMap(map)).toList();
+
+    return taskHistoryList; // Return the list of TaskHistory objects
+  }
+
+  Future<int> updateTaskHistory(String taskTitle, int taskId, String date, int duration, int status) async {
+    Database db = await instance.database;
+
+    // Query the task_history table for a specific taskId
+    var res = await db.update('task_history', 
+    {
+      'taskTitle' : taskTitle, 
+      'duration' : duration, 
+      'status' : status
+    },
+      where: 'taskId = ? AND date = ?',
+      whereArgs: [taskId, date],
+    );
+    return res;
+  }
+
+  Future<int> deleteTaskHistoryByDate(String date) async {
+    Database db = await instance.database;
+
+    // Delete rows in the task_history table where the date matches
+    return await db.delete(
+      'task_history',   // Name of your task history table
+      where: 'date = ?',  // Condition to match the date column
+      whereArgs: [date],  // Value for the date
     );
   }
 }
